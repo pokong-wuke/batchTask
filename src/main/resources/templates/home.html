@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Home Page</title>
+    <style>
+        /* 隐藏原生文件上传按钮 */
+        input[type="file"] {
+            display: none;
+        }
+
+        /* 自定义上传按钮样式 */
+        .custom-upload-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: #fff;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .custom-upload-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* 上传文件名显示样式 */
+        .file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        #alert-container {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+    <script src="/js/jquery-3.5.1.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<h1 th:text="${message}"></h1>
+
+<!-- 自定义上传按钮和文件名显示 -->
+<label for="file-upload" class="custom-upload-btn">选择文件</label>
+<span class="file-name" id="file-name"></span>
+
+<!-- 实际的文件上传表单 -->
+<form id="uploadForm" method="POST" enctype="multipart/form-data">
+    <input style="display: none" type="file" id="file-upload" name="file" onchange="updateFileName()"/>
+    <input style="margin-top: 20px" type="submit" value="上传"/>
+</form>
+<!--<button style="margin-top: 20px" id="test">测试</button>-->
+<div id="alert-container"></div>
+<div id="response"></div>
+<script>
+    // 更新文件名显示
+    function updateFileName() {
+        const fileInput = document.getElementById('file-upload');
+        const fileName = document.getElementById('file-name');
+        fileName.textContent = fileInput.files[0].name;
+    }
+
+    // 监听表单提交事件
+    $('#uploadForm').submit(function (event) {
+        event.preventDefault(); // 阻止表单默认提交行为
+        var form = document.getElementById('uploadForm');
+        var formData = new FormData(form);
+        console.log("formData",formData);
+        // 发送 AJAX 请求
+        $.ajax({
+            url: '/upload/execTask',
+            type: 'POST',
+            data: formData,
+            dataType: 'json',
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                console.log(response);
+                for (let i = 0; i < response.length; i++) {
+                    if(response[i].code == "200"){
+                        showAlert('success', response[i].msg);
+                    }else {
+                        showAlert('danger', response[i].msg);
+                    }
+                }
+            },
+            error: function () {
+                $('#response').html('上传失败');
+            }
+        });
+    });
+
+    // 监听表单提交事件
+    $('#test').click(function () {
+        console.log("点击了")
+        // 发送 AJAX 请求
+        $.ajax({
+            url: '/upload/testUpload',
+            type: 'POST',
+            data: {},
+            dataType: 'json',
+            success: function (response) {
+                showAlert('success', '请求成功！');
+            }
+        });
+    });
+    function showAlert(type, message) {
+        var alertDiv = $('<div>', { class: 'alert alert-' + type }).text(message);
+        $('#alert-container').append(alertDiv); // 将警示框添加到页面中的警示框容器
+        alertDiv.fadeTo(2000, 500).slideUp(500, function() {
+            alertDiv.slideUp(500);
+        });
+    }
+
+</script>
+</body>
+</html>
