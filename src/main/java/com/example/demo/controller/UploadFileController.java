@@ -1,9 +1,13 @@
 package com.example.demo.controller;
 
+import cn.hutool.core.lang.UUID;
+import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.example.demo.entity.Police;
 import com.example.demo.request.TaskRequest;
+import com.example.demo.service.IPoliceService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -17,6 +21,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.NumberToTextConverter;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,6 +43,9 @@ import java.util.Map;
 @RequestMapping("/upload")
 @Slf4j
 public class UploadFileController {
+
+    @Autowired
+    private IPoliceService policeService;
 
     private final String url = "http://222.133.41.27:8019/tpeas/chengnuo";
 
@@ -88,6 +96,7 @@ public class UploadFileController {
                 HttpPost request = new HttpPost(url);
                 request.setHeader("Content-Type", "application/json");
                 request.setEntity(new StringEntity(requestBody, ContentType.APPLICATION_JSON));
+                log.info("请求参数为：{}，{}，{}，{}，{}",name,idCode,phone,taskRequest.getJjtype(),taskRequest.getZhanxian());
                 // 执行请求
                 HttpResponse response = httpClient.execute(request);
                 // 处理响应
@@ -103,13 +112,18 @@ public class UploadFileController {
                     HashMap<String, Object> rMap = new HashMap<>();
                     rMap.put("code", code);
                     String msg = "";
+                    Police police = new Police();
+                    police.setId(IdUtil.simpleUUID()).setIdcode(idCode).setName(name).setPhone(phone).setJjtype("平原交警").setZhanxian("属地镇街");
                     if ("200".equals(code)) {
+                        police.setStatus("1");
                         msg = "姓名：" + name + "，身份证号：" + idCode + "，手机号：" + phone + " 上传成功";
                     } else {
+                        police.setStatus("0");
                         msg = "姓名：" + name + "，身份证号：" + idCode + "，手机号：" + phone + " 上传失败";
                     }
                     rMap.put("msg", msg);
                     list.add(rMap);
+                    policeService.save(police);
                 } else {
                     log.info("请求失败，状态码{}", statusCode);
                     HashMap<String, Object> rMap = new HashMap<>();
