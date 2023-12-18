@@ -19,7 +19,7 @@ public class TaskRequest {
     private String count = "1";
     private String type;
     private String jjtype = "平原交警";
-    private String company;
+    private String company = "王打卦镇";
     private String jjxingming;
     private String zhanxian = "属地镇街";
     private String[] item = {};

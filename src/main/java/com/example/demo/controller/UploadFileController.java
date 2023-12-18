@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
@@ -29,10 +30,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author skb
@@ -51,13 +49,11 @@ public class UploadFileController {
 
     @PostMapping("/execTask")
     public Object execTask(@RequestParam("file") MultipartFile file) {
-        List<Map<String, Object>> list = new ArrayList<>();
+        Map<String,Object> map = new HashMap<>();
         if (file.isEmpty()) {
-            HashMap<String, Object> rMap = new HashMap<>();
-            rMap.put("code", "500");
-            rMap.put("msg", "Please select a file to upload.");
-            list.add(rMap);
-            return list;
+            map.put("success",false);
+            map.put("msg","请选择一个文件");
+            return map;
         }
         InputStream inputStream = null;
         // 读取 Excel 文件
@@ -87,6 +83,11 @@ public class UploadFileController {
                 } else if (row.getCell(2).getCellType() == CellType.STRING) {
                     phone = row.getCell(2).getStringCellValue();
                 }
+                if(StrUtil.isBlank(name) || StrUtil.isBlank(idCode) || StrUtil.isBlank(phone)){
+                    map.put("success",true);
+                    map.put("msg","导入成功");
+                    return map;
+                }
                 TaskRequest taskRequest = new TaskRequest();
                 taskRequest.setXingming(name).setIdcode(idCode).setPhone(phone);
                 // 构造请求数据
@@ -96,7 +97,7 @@ public class UploadFileController {
                 HttpPost request = new HttpPost(url);
                 request.setHeader("Content-Type", "application/json");
                 request.setEntity(new StringEntity(requestBody, ContentType.APPLICATION_JSON));
-                log.info("请求参数为：{}，{}，{}，{}，{}",name,idCode,phone,taskRequest.getJjtype(),taskRequest.getZhanxian());
+                log.info("请求参数为：{}，{}，{}，{}，{}，{}",name,idCode,phone,taskRequest.getCompany(),taskRequest.getJjtype(),taskRequest.getZhanxian());
                 // 执行请求
                 HttpResponse response = httpClient.execute(request);
                 // 处理响应
@@ -106,30 +107,19 @@ public class UploadFileController {
                     String responseBody = EntityUtils.toString(entity);
                     // 响应处理逻辑
                     log.info("请求成功，响应值{}", responseBody);
-                    Map<String, Object> map = JSONObject.parseObject(responseBody, new TypeReference<Map<String, Object>>() {
+                    Map<String, Object> rMap = JSONObject.parseObject(responseBody, new TypeReference<Map<String, Object>>() {
                     });
-                    String code = map.getOrDefault("code", "500").toString();
-                    HashMap<String, Object> rMap = new HashMap<>();
-                    rMap.put("code", code);
-                    String msg = "";
+                    String code = rMap.getOrDefault("code", "500").toString();
                     Police police = new Police();
-                    police.setId(IdUtil.simpleUUID()).setIdcode(idCode).setName(name).setPhone(phone).setJjtype("平原交警").setZhanxian("属地镇街");
+                    police.setId(IdUtil.simpleUUID()).setIdcode(idCode).setName(name).setPhone(phone).setJjtype("平原交警").setZhanxian("属地镇街").setCompany("王打卦镇").setCreateTime(new Date());
                     if ("200".equals(code)) {
                         police.setStatus("1");
-                        msg = "姓名：" + name + "，身份证号：" + idCode + "，手机号：" + phone + " 上传成功";
                     } else {
                         police.setStatus("0");
-                        msg = "姓名：" + name + "，身份证号：" + idCode + "，手机号：" + phone + " 上传失败";
                     }
-                    rMap.put("msg", msg);
-                    list.add(rMap);
                     policeService.save(police);
                 } else {
                     log.info("请求失败，状态码{}", statusCode);
-                    HashMap<String, Object> rMap = new HashMap<>();
-                    rMap.put("code", statusCode);
-                    rMap.put("msg", "姓名：" + name + "，身份证号：" + idCode + "，手机号：" + phone + " 上传失败");
-                    list.add(rMap);
                 }
             }
         } catch (IOException e) {
@@ -137,7 +127,9 @@ public class UploadFileController {
         } finally {
             IOUtils.closeQuietly(inputStream);
         }
-        return list;
+        map.put("success",true);
+        map.put("msg","导入成功");
+        return map;
     }
 
     @PostMapping("/testUpload")
