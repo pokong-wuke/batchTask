@@ -97,7 +97,7 @@ public class UploadFileController {
                 HttpPost request = new HttpPost(url);
                 request.setHeader("Content-Type", "application/json");
                 request.setEntity(new StringEntity(requestBody, ContentType.APPLICATION_JSON));
-                log.info("请求参数为：{}，{}，{}，{}，{}，{}",name,idCode,phone,taskRequest.getCompany(),taskRequest.getJjtype(),taskRequest.getZhanxian());
+                log.info("请求参数为：{}，{}，{}，{}，{}",name,idCode,phone,taskRequest.getCompany(),taskRequest.getZhanxian());
                 // 执行请求
                 HttpResponse response = httpClient.execute(request);
                 // 处理响应
@@ -111,7 +111,7 @@ public class UploadFileController {
                     });
                     String code = rMap.getOrDefault("code", "500").toString();
                     Police police = new Police();
-                    police.setId(IdUtil.simpleUUID()).setIdcode(idCode).setName(name).setPhone(phone).setJjtype("平原交警").setZhanxian("属地镇街").setCompany("王打卦镇").setCreateTime(new Date());
+                    police.setId(IdUtil.simpleUUID()).setIdcode(idCode).setName(name).setPhone(phone).setJjtype("").setZhanxian("医疗卫健场所").setCompany("王打卦镇").setCreateTime(new Date());
                     if ("200".equals(code)) {
                         police.setStatus("1");
                     } else {
